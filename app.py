@@ -110,8 +110,8 @@ def main():
 				pilih = st.sidebar.selectbox("Menu",submenu)
 				if pilih == "Home":
 					st.subheader('Kelompok 2')
-					st.subheader('Pencarian Harga Rumah Berdasarkan Kriteria')
-					st.write("Ini adalah web untuk melakukan analisa terhadap harga rumah berdasarkan kriteria yang anda inginkan.")
+					st.subheader('Pencarian Harga Apartement Berdasarkan Kriteria')
+					st.write("Ini adalah web untuk melakukan analisa terhadap harga Apartement berdasarkan kriteria yang anda inginkan.")
 					st.write("berikut adalah dataset yang sudah kami kumpulkan untuk melakukan analisa rumah menggunakan metode Decision tree")
 					df=load_data()
 					df
