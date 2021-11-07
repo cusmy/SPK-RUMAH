@@ -47,6 +47,14 @@ def load_data():
 
 df=load_data()
 
+@st.cache
+def get_locations(zip):
+	for i in zip:
+		url='https://data.opendatasoft.com/api/records/1.0/search/?dataset=geonames-postal-code%40public&q=&rows=10&facet=postal_code&refine.country_code=US&refine.postal_code='+str(i).format(zip)
+		data=requests.get(url).json()
+		lat=data['records'][0]['fields']['latitude']
+		lng=data['records'][0]['fields']['longitude']
+	return lat, lng
 
 
 
@@ -110,8 +118,8 @@ def main():
 				pilih = st.sidebar.selectbox("Menu",submenu)
 				if pilih == "Home":
 					st.subheader('Kelompok 2')
-					st.subheader('Pencarian Harga Apartement Berdasarkan Kriteria')
-					st.write("Ini adalah web untuk melakukan analisa terhadap harga Apartement berdasarkan kriteria yang anda inginkan.")
+					st.subheader('Pencarian Harga Rumah Berdasarkan Kriteria')
+					st.write("Ini adalah web untuk melakukan analisa terhadap harga rumah berdasarkan kriteria yang anda inginkan.")
 					st.write("berikut adalah dataset yang sudah kami kumpulkan untuk melakukan analisa rumah menggunakan metode Decision tree")
 					df=load_data()
 					df
@@ -132,6 +140,8 @@ def main():
 					df=df[df['waterfront']==params['waterfront']]
 					df=df[(df['sqft_living']>0.9*params['sqft']) & (df['sqft_living']<1.1*params['sqft'])]
 					df.reset_index()
+					df['lat']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[0] for i in range(len(df))]
+					df['lon']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[1] for i in range(len(df))]
 					y=df['price']
 					X=df[['bedrooms','bathrooms','floors','sqft_living','waterfront']]
 					X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, shuffle=True)
@@ -150,6 +160,7 @@ def main():
 					btn = st.button("Kalkulasi")
 					if btn:
 						st.write('Prediksi Harga Rumah Rata-Rata **${:.2f}**'.format(PRED))
+						st.map(df_models[['lat','lon']])
 						df_models
 					else:
 						pass
@@ -187,7 +198,7 @@ def main():
 				'bedrooms' : st.selectbox('Kamar.',(df['bedrooms'].unique())),
 				'bathrooms' : st.selectbox('Kamar Mandi.',(df['bathrooms'].unique())),
 				'floors' : st.selectbox('Jumlah Lantai.',(df['floors'].unique())),
-				'sqft' : st.slider('Luas Tanah.', 800,max(df['sqft_living']),step=100),
+				'sqft' : st.slider('Luas Tanah.', 1000,max(df['sqft_living']),step=100),
 				'waterfront':1 if st.checkbox('Tepi Laut.') else 0
 				}
 				df=df[df['bedrooms']==params['bedrooms']]
@@ -196,6 +207,8 @@ def main():
 				df=df[df['waterfront']==params['waterfront']]
 				df=df[(df['sqft_living']>0.9*params['sqft']) & (df['sqft_living']<1.1*params['sqft'])]
 				df.reset_index()
+				df['lat']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[0] for i in range(len(df))]
+				df['lon']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[1] for i in range(len(df))]
 				y=df['price']
 				X=df[['bedrooms','bathrooms','floors','sqft_living','waterfront']]
 				X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, shuffle=True)
@@ -214,6 +227,7 @@ def main():
 				btn = st.button("Predict")
 				if btn:
 					st.write('Prediksi Harga Rumah Rata-Rata **${:.2f}**'.format(PRED))
+					st.map(df_models[['lat','lon']])
 					df_models
 				else:
 					pass
