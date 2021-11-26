@@ -14,7 +14,19 @@ import json
 from managedb import *
 import hashlib
 
+Error = """
+<style>
+.stException {
+	visibility:hidden;
+}
+</style>
 
+
+
+"""
+
+
+st.markdown(Error, unsafe_allow_html=True)
 def generate_hash(password):
 	return hashlib.sha256(str.encode(password)).hexdigest()
 
@@ -37,12 +49,12 @@ def run_status():
 def load_data():
 	df=pd.read_excel('data.xls')
 	df=df.drop(['country'],axis=1)
-	df=df[df['price']>0]
+	df=df[df['harga']>0]
 	df.rename(columns={'statezip':'zip'}, inplace=True)
 	df['zip']=df['zip'].str.replace('WA','').astype(int)
-	df['floors']=df['floors'].astype(int)
-	df=df[df['bedrooms']>0]
-	df=df[df['bathrooms']>0]
+	df['lantai']=df['lantai'].astype(int)
+	df=df[df['kamar']>0]
+	df=df[df['kamar_mandi']>0]
 	return df
 
 df=load_data()
@@ -59,27 +71,27 @@ def get_locations(zip):
 
 
 def map_df(df):
-	df=df[df['bedrooms']==kamar]
-	df=df[df['bathrooms']==kmandi]
-	df=df[df['floors']==jlantai]
+	df=df[df['kamar']==kamar]
+	df=df[df['kamar_mandi']==kmandi]
+	df=df[df['lantai']==jlantai]
 	df=df[df['waterfront']==tlaut]
-	df=df[(df['sqft_living']>0.9*ltanah) & (df['sqft_living']<1.1*ltanah)]
+	df=df[(df['luas_rumah']>0.9*ltanah) & (df['luas_rumah']<1.1*ltanah)]
 	df.reset_index()
 	return df
 
 test_size = 0.25
 
 def create_param(df):
-	kamar = st.selectbox('Kamar.',(df['bedrooms'].unique()))
-	kmandi = st.selectbox('Kamar Mandi.',(df['bathrooms'].unique()))
-	jlantai = st.selectbox('Jumlah Lantai.',(df['floors'].unique()))
-	ltanah = st.slider('Luas Tanah.', 800,max(df['sqft_living']),step=100)
+	kamar = st.selectbox('Kamar.',(df['kamar'].unique()))
+	kmandi = st.selectbox('Kamar Mandi.',(df['kamar_mandi'].unique()))
+	jlantai = st.selectbox('Jumlah Lantai.',(df['lantai'].unique()))
+	ltanah = st.slider('Luas Tanah.', 800,max(df['luas_rumah']),step=100)
 	tlaut = 1 if st.checkbox('Tepi Laut.') else 0
 	return kamar,kmandi,jlantai,ltanah,tlaut
 @st.cache
 def get_models():
-	y=df['price']
-	X=df[['bedrooms','bathrooms','floors','sqft_living','waterfront']]
+	y=df['harga']
+	X=df[['kamar','kamar_mandi','lantai','luas_rumah','waterfront']]
 	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, shuffle=True)
 	models = DecisionTreeRegressor(max_depth=25)
 	df_models = pd.DataFrame()
@@ -88,12 +100,12 @@ def get_models():
 	m = str(models)
 	temp['Model'] = m[:m.index('(')]
 	models.fit(X_train, y_train)
-	temp['RMSE_Price'] = sqrt(mse(y_test, models.predict(X_test)))
+	temp['RMSE_harga'] = sqrt(mse(y_test, models.predict(X_test)))
 	temp['Pred Value']=models.predict(pd.DataFrame(df,  index=[0]))[0]
-	print('RMSE score',temp['RMSE_Price'])
+	print('RMSE score',temp['RMSE_harga'])
 	df_models = df_models.append([temp])
 	df_models.set_index('Model', inplace=True)
-	pred_value=df_models['Pred Value'].iloc[[df_models['RMSE_Price'].argmin()]].values.astype(float)
+	pred_value=df_models['Pred Value'].iloc[[df_models['RMSE_harga'].argmin()]].values.astype(float)
 	return pred_value, df_models
 
 def run_data():
@@ -102,6 +114,7 @@ def run_data():
 	st.write('Prediksi Harga Rumah Rata-Rata **${:.2f}**'.format(df_models))
 	df1=map_df(df)
 	df1
+
 
 def main():
 	submenu = ["Home","SPK","Add User","Lihat User"]
@@ -128,22 +141,23 @@ def main():
 					st.subheader('Property Options')
 
 					params={
-					'bedrooms' : st.selectbox('Kamar.',(df['bedrooms'].unique())),
-					'bathrooms' : st.selectbox('Kamar Mandi.',(df['bathrooms'].unique())),
-					'floors' : st.selectbox('Jumlah Lantai.',(df['floors'].unique())),
-					'sqft' : st.slider('Luas Tanah.', 1000,max(df['sqft_living']),step=100),
-					'waterfront':1 if st.checkbox('Tepi Laut.') else 0
+					'kamar' : st.selectbox('Kamar.',(1,2,3)),
+					'kamar_mandi' : st.selectbox('Kamar Mandi.',(1,2,3)),
+					'lantai' : st.selectbox('Jumlah Lantai.',(1,2)),
+					'sqft' : st.selectbox('Luas Tanah m²', (1000,1500,2000,2500,3000)),
+					'kondisi' : st.selectbox('Kondisi.',(df['kondisi'].unique())),
 					}
-					df=df[df['bedrooms']==params['bedrooms']]
-					df=df[df['bathrooms']==params['bathrooms']]
-					df=df[df['floors']==params['floors']]
-					df=df[df['waterfront']==params['waterfront']]
-					df=df[(df['sqft_living']>0.9*params['sqft']) & (df['sqft_living']<1.1*params['sqft'])]
+					df=df[df['kamar']==params['kamar']]
+					df=df[df['kamar_mandi']==params['kamar_mandi']]
+					df=df[df['lantai']==params['lantai']]
+					df=df[df['kondisi']==params['kondisi']]
+					df=df[(df['luas_rumah']>0.1*params['sqft']) & (df['luas_rumah']<1*params['sqft'])]
 					df.reset_index()
 					df['lat']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[0] for i in range(len(df))]
 					df['lon']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[1] for i in range(len(df))]
-					y=df['price']
-					X=df[['bedrooms','bathrooms','floors','sqft_living','waterfront']]
+					y=df['harga']
+					X=df[['kamar','kamar_mandi','lantai','luas_rumah','kondisi']]
+					
 					X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, shuffle=True)
 					models = DecisionTreeRegressor(max_depth=25)
 					df_models = pd.DataFrame()
@@ -155,13 +169,25 @@ def main():
 					MAE = sqrt(mse(y_test, models.predict(X_test)))
 					PRED =models.predict(pd.DataFrame(params,  index=[0]))[0]
 					df_models = df_models.append(df)
+					data = list(range(1,11))
+					if df_models.shape[0] > len(data):
+						nomer = pd.DataFrame(data,columns=['peringkat'])
+					else:
+						data = list(range(1,df_models.shape[0]+1))
+						nomer = pd.DataFrame(data,columns=['peringkat'])
+					df_models = df_models.tail(10)
+					bung = pd.concat([nomer.tail(10),df_models.reset_index()],axis=1)
+					asli = bung
+					asli = asli.drop(['index'],axis=1)
+					asli = asli[['harga','kamar','kamar_mandi','luas_rumah','lantai','kondisi','Ket','alamat','kota']].style.hide_index()
+					
 
-
-					btn = st.button("Kalkulasi")
+					
+					btn = st.button("Cari")
 					if btn:
 						st.write('Prediksi Harga Rumah Rata-Rata **${:.2f}**'.format(PRED))
 						st.map(df_models[['lat','lon']])
-						df_models
+						asli
 					else:
 						pass
 
@@ -169,9 +195,9 @@ def main():
 					if st.checkbox('Show ML MAE'):
 						st.write('MAE Harga = **{:.2f}**'.format(MAE))
 					if st.sidebar.button('Show JSON'):
-						st.json(df[['price','bedrooms','bathrooms','floors','sqft_living','waterfront']].to_json())
+						st.json(df[['harga','kamar','kamar_mandi','lantai','luas_rumah','kondisi']].to_json())
 					if st.sidebar.button('Close JSON'):
-						df
+						asli
 				elif pilih == "Add User":
 					new_username = st.text_input("User name")
 					new_password = st.text_input("Password", type="password")
@@ -195,22 +221,23 @@ def main():
 				st.subheader('Property Options')
 
 				params={
-				'bedrooms' : st.selectbox('Kamar.',(df['bedrooms'].unique())),
-				'bathrooms' : st.selectbox('Kamar Mandi.',(df['bathrooms'].unique())),
-				'floors' : st.selectbox('Jumlah Lantai.',(df['floors'].unique())),
-				'sqft' : st.slider('Luas Tanah.', 1000,max(df['sqft_living']),step=100),
-				'waterfront':1 if st.checkbox('Tepi Laut.') else 0
+				'kamar' : st.selectbox('Kamar.',(1,2,3)),
+				'kamar_mandi' : st.selectbox('Kamar Mandi.',(1,2,3)),
+				'lantai' : st.selectbox('Jumlah Lantai.',(1,2)),
+				'sqft' : st.selectbox('Luas Tanah m²', (1000,1500,2000,2500,3000)),
+				'kondisi' : st.selectbox('Kondisi.',(df['kondisi'].unique())),
 				}
-				df=df[df['bedrooms']==params['bedrooms']]
-				df=df[df['bathrooms']==params['bathrooms']]
-				df=df[df['floors']==params['floors']]
-				df=df[df['waterfront']==params['waterfront']]
-				df=df[(df['sqft_living']>0.9*params['sqft']) & (df['sqft_living']<1.1*params['sqft'])]
+				df=df[df['kamar']==params['kamar']]
+				df=df[df['kamar_mandi']==params['kamar_mandi']]
+				df=df[df['lantai']==params['lantai']]
+				df=df[df['kondisi']==params['kondisi']]
+				df=df[(df['luas_rumah']>0.1*params['sqft']) & (df['luas_rumah']<1*params['sqft'])]
 				df.reset_index()
 				df['lat']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[0] for i in range(len(df))]
 				df['lon']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[1] for i in range(len(df))]
-				y=df['price']
-				X=df[['bedrooms','bathrooms','floors','sqft_living','waterfront']]
+				y=df['harga']
+				X=df[['kamar','kamar_mandi','lantai','luas_rumah','kondisi']]
+					
 				X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, shuffle=True)
 				models = DecisionTreeRegressor(max_depth=25)
 				df_models = pd.DataFrame()
@@ -222,13 +249,25 @@ def main():
 				MAE = sqrt(mse(y_test, models.predict(X_test)))
 				PRED =models.predict(pd.DataFrame(params,  index=[0]))[0]
 				df_models = df_models.append(df)
+				data = list(range(1,11))
+				if df_models.shape[0] > len(data):
+					nomer = pd.DataFrame(data,columns=['peringkat'])
+				else:
+					data = list(range(1,df_models.shape[0]+1))
+					nomer = pd.DataFrame(data,columns=['peringkat'])
+				df_models = df_models.tail(10)
+				bung = pd.concat([nomer.tail(10),df_models.reset_index()],axis=1)
+				asli = bung
+				asli = asli.drop(['index'],axis=1)
+				asli = asli[['harga','kamar','kamar_mandi','luas_rumah','lantai','kondisi','Ket','alamat','kota']].style.hide_index()
+					
 
-
-				btn = st.button("Predict")
+					
+				btn = st.button("Cari")
 				if btn:
 					st.write('Prediksi Harga Rumah Rata-Rata **${:.2f}**'.format(PRED))
 					st.map(df_models[['lat','lon']])
-					df_models
+					asli
 				else:
 					pass
 					
