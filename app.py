@@ -135,7 +135,7 @@ def main():
 					st.write("Ini adalah web untuk melakukan analisa terhadap harga rumah berdasarkan kriteria yang anda inginkan.")
 					st.write("berikut adalah dataset yang sudah kami kumpulkan untuk melakukan analisa rumah menggunakan metode Decision tree")
 					df=load_data()
-					df
+					df[['harga','kamar','kamar_mandi','luas_rumah','lantai','kondisi','Ket','alamat','kota']]
 				elif pilih == "SPK":
 					df=load_data()
 					st.subheader('Property Options')
@@ -145,12 +145,23 @@ def main():
 					'kamar_mandi' : st.selectbox('Kamar Mandi.',(1,2,3)),
 					'lantai' : st.selectbox('Jumlah Lantai.',(1,2)),
 					'sqft' : st.selectbox('Luas Tanah m²', (1000,1500,2000,2500,3000)),
-					'kondisi' : st.selectbox('Kondisi.',(df['kondisi'].unique())),
+					'kondisi' : st.selectbox('Kondisi.',('Sangat Bagus','Bagus','Baik','Lumayan','Jelek')),
 					}
 					df=df[df['kamar']==params['kamar']]
 					df=df[df['kamar_mandi']==params['kamar_mandi']]
 					df=df[df['lantai']==params['lantai']]
-					df=df[df['kondisi']==params['kondisi']]
+					if params['kondisi'] == 'Sangat Bagus':
+						df=df[df['kondisi']==5]
+					elif params['kondisi'] == 'Bagus':
+						df=df[df['kondisi']==4]
+					elif params['kondisi'] == 'Baik':
+						df=df[df['kondisi']==3]
+					elif param['kondisi'] =='Lumayan':
+						df=df[df['kondisi']==2]
+					elif param['kondisi'] =='Jelek':
+						df=df[df['kondisi']==1]
+					else:
+						pass
 					df=df[(df['luas_rumah']>0.1*params['sqft']) & (df['luas_rumah']<1*params['sqft'])]
 					df.reset_index()
 					df['lat']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[0] for i in range(len(df))]
@@ -225,12 +236,23 @@ def main():
 				'kamar_mandi' : st.selectbox('Kamar Mandi.',(1,2,3)),
 				'lantai' : st.selectbox('Jumlah Lantai.',(1,2)),
 				'sqft' : st.selectbox('Luas Tanah m²', (1000,1500,2000,2500,3000)),
-				'kondisi' : st.selectbox('Kondisi.',(df['kondisi'].unique())),
+				'kondisi' : st.selectbox('Kondisi.',('Sangat Bagus','Bagus','Baik','Lumayan','Jelek')),
 				}
 				df=df[df['kamar']==params['kamar']]
 				df=df[df['kamar_mandi']==params['kamar_mandi']]
 				df=df[df['lantai']==params['lantai']]
-				df=df[df['kondisi']==params['kondisi']]
+				if params['kondisi'] == 'Sangat Bagus':
+					df=df[df['kondisi']==5]
+				elif params['kondisi'] == 'Bagus':
+					df=df[df['kondisi']==4]
+				elif params['kondisi'] == 'Baik':
+					df=df[df['kondisi']==3]
+				elif param['kondisi'] =='Lumayan':
+					df=df[df['kondisi']==2]
+				elif param['kondisi'] =='Jelek':
+					df=df[df['kondisi']==1]
+				else:
+					pass
 				df=df[(df['luas_rumah']>0.1*params['sqft']) & (df['luas_rumah']<1*params['sqft'])]
 				df.reset_index()
 				df['lat']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[0] for i in range(len(df))]
