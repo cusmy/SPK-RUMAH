@@ -79,6 +79,9 @@ def map_df(df):
 	df.reset_index()
 	return df
 
+
+		
+
 test_size = 0.25
 
 def create_param(df):
@@ -135,23 +138,37 @@ def main():
 					st.write("Ini adalah web untuk melakukan analisa terhadap harga rumah berdasarkan kriteria yang anda inginkan.")
 					st.write("berikut adalah dataset yang sudah kami kumpulkan untuk melakukan analisa rumah menggunakan metode Decision tree")
 					df=load_data()
-					df[['harga','kamar','kamar_mandi','luas_rumah','lantai','kondisi','Ket','alamat','kota']]
+					df
 				elif pilih == "SPK":
 					df=load_data()
 					st.subheader('Property Options')
+					st.write("Jika Tombol Cari Tidak Ada Maka Data yang anda cari belum ada pada database Kami")
 
 					params={
 					'kamar' : st.selectbox('Kamar.',(1,2,3)),
 					'kamar_mandi' : st.selectbox('Kamar Mandi.',(1,2,3)),
 					'lantai' : st.selectbox('Jumlah Lantai.',(1,2)),
-					'sqft' : st.selectbox('Luas Tanah m²', (1000,1500,2000,2500,3000)),
-					'kondisi' : st.selectbox('Kondisi.',(5,4,3,2,1)),
+					'sqft' : st.selectbox('Perkiraan Luas Tanah m²', (1000,1500,2000,2500,3000,4000,5000)),
+					'kondisi' : st.selectbox('Kondisi.',('Sangat Bagus','Bagus','Baik','Lumayan','Jelek')),
 					}
+
+					if params['kondisi']=='Sangat Bagus':
+						params['kondisi']=5
+					elif params['kondisi']=='Bagus':
+						params['kondisi']=4
+					elif params['kondisi']=='Baik':
+						params['kondisi']=3
+					elif params['kondisi']=='Lumayan':
+						params['kondisi']=2
+					elif params['kondisi']=='Jelek':
+						params['kondisi']=1
+					else:
+						pass
 					df=df[df['kamar']==params['kamar']]
 					df=df[df['kamar_mandi']==params['kamar_mandi']]
 					df=df[df['lantai']==params['lantai']]
 					df=df[df['kondisi']==params['kondisi']]
-					df=df[(df['luas_rumah']>0.1*params['sqft']) & (df['luas_rumah']<1*params['sqft'])]
+					df=df[(df['luas_rumah']>0.01*params['sqft']) & (df['luas_rumah']<1.01*params['sqft'])]
 					df.reset_index()
 					df['lat']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[0] for i in range(len(df))]
 					df['lon']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[1] for i in range(len(df))]
@@ -175,11 +192,15 @@ def main():
 					else:
 						data = list(range(1,df_models.shape[0]+1))
 						nomer = pd.DataFrame(data,columns=['peringkat'])
+					df_models = df_models.sort_values(by=['harga'])
 					df_models = df_models.tail(10)
 					bung = pd.concat([nomer.tail(10),df_models.reset_index()],axis=1)
 					asli = bung
 					asli = asli.drop(['index'],axis=1)
+					asli['harga'] = asli['harga'].apply(np.int64)
+					asli['kamar_mandi'] = asli['kamar_mandi'].apply(np.int64)
 					asli = asli[['harga','kamar','kamar_mandi','luas_rumah','lantai','kondisi','Ket','alamat','kota']].style.hide_index()
+					
 					
 
 					
@@ -219,19 +240,33 @@ def main():
 			else:
 				df=load_data()
 				st.subheader('Property Options')
+				st.write("Jika Tombol Cari Tidak Ada Maka Data yang anda cari belum ada pada database Kami")
 
 				params={
 				'kamar' : st.selectbox('Kamar.',(1,2,3)),
 				'kamar_mandi' : st.selectbox('Kamar Mandi.',(1,2,3)),
 				'lantai' : st.selectbox('Jumlah Lantai.',(1,2)),
-				'sqft' : st.selectbox('Luas Tanah m²', (1000,1500,2000,2500,3000)),
-				'kondisi' : st.selectbox('Kondisi.',(5,4,3,2,1)),
+				'sqft' : st.selectbox('Perkiraan Luas Tanah m²', (1000,1500,2000,2500,3000,4000,5000)),
+				'kondisi' : st.selectbox('Kondisi.',('Sangat Bagus','Bagus','Baik','Lumayan','Jelek')),
 				}
+
+				if params['kondisi']=='Sangat Bagus':
+					params['kondisi']=5
+				elif params['kondisi']=='Bagus':
+					params['kondisi']=4
+				elif params['kondisi']=='Baik':
+					params['kondisi']=3
+				elif params['kondisi']=='Lumayan':
+					params['kondisi']=2
+				elif params['kondisi']=='Jelek':
+					params['kondisi']=1
+				else:
+					pass
 				df=df[df['kamar']==params['kamar']]
 				df=df[df['kamar_mandi']==params['kamar_mandi']]
 				df=df[df['lantai']==params['lantai']]
 				df=df[df['kondisi']==params['kondisi']]
-				df=df[(df['luas_rumah']>0.1*params['sqft']) & (df['luas_rumah']<1*params['sqft'])]
+				df=df[(df['luas_rumah']>0.01*params['sqft']) & (df['luas_rumah']<1.01*params['sqft'])]
 				df.reset_index()
 				df['lat']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[0] for i in range(len(df))]
 				df['lon']=[get_locations(df.iloc[[i]]['zip'].values.astype(int))[1] for i in range(len(df))]
@@ -255,10 +290,13 @@ def main():
 				else:
 					data = list(range(1,df_models.shape[0]+1))
 					nomer = pd.DataFrame(data,columns=['peringkat'])
+				df_models = df_models.sort_values(by=['harga'])
 				df_models = df_models.tail(10)
 				bung = pd.concat([nomer.tail(10),df_models.reset_index()],axis=1)
 				asli = bung
 				asli = asli.drop(['index'],axis=1)
+				asli['harga'] = asli['harga'].apply(np.int64)
+				asli['kamar_mandi'] = asli['kamar_mandi'].apply(np.int64)
 				asli = asli[['harga','kamar','kamar_mandi','luas_rumah','lantai','kondisi','Ket','alamat','kota']].style.hide_index()
 					
 
